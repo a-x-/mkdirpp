@@ -1,4 +1,4 @@
-var mkdirp = require('../').mkdirp;
+var mkdirp = require('../');
 var path = require('path');
 var fs = require('fs');
 var test = require('tap').test;
@@ -30,9 +30,13 @@ test('clobber-pre', function (t) {
 
 test('clobber', function (t) {
     t.plan(2);
-    mkdirp(file, _0755, function (err) {
-        t.ok(err);
-        t.equal(err.code, 'ENOTDIR');
-        t.end();
-    });
+    mkdirp(file, _0755)
+        .then(function () {
+            throw 'should fail';
+        })
+        .catch(function (err) {
+            t.ok(err);
+            t.equal(err.code, 'ENOTDIR');
+            t.end();
+        });
 });

@@ -30,8 +30,13 @@ function mkdirp (p, opts) {
     }
 
     opts_.mode = opts_.mode || _0777 & (~process.umask())
+    opts_.fs = opts_.fs || fs;
 
-    return _mkdirp(p, opts_);
+    return new Promise(function (res, rej) {
+        _mkdirp(p, opts_, function (err) {
+            err ? rej(err) : res();
+        });
+    });
 }
 
 /**
@@ -41,35 +46,43 @@ function mkdirp (p, opts) {
  * @param {*} opts.fs
  * @param {Number} opts.mode
  *
+ * @param {String} made - created path
+ *
  * @returns {Promise}
  *
  * @private
  */
-function _mkdirp (p, opts) {
-    var xfs = opts.fs || fs;
-
+function _mkdirp (p, opts, cb, made) {
     p = path.resolve(p);
 
-    return new Promise(function (res, rej) {
-        xfs.mkdir(p, opts.mode, function (er) {
-            if (!er) {
-                return res();
-            }
-            switch (er.code) {
-                case 'ENOENT':
-                    return _mkdirp(path.dirname(p), opts).then(function (er) {
-                        return _mkdirp(p, opts);
-                    });
-                    break;
+    opts.fs.mkdir(p, opts.mode, function (err) {
+        var made_ = made || p;
+        if (!err) {
+            cb(null, made_);
+            return;
+        }
+        switch (err.code) {
+            case 'ENOENT':
+                _mkdirp(path.dirname(p), opts, function (err, made) {
+                    err ? cb(err, made) : _mkdirp(p, opts, cb, made);
+                });
+                break;
 
-                case 'EEXIST':
-                    return res();
-                    break;
+            case 'EEXIST':
+                cb(null, made_);
+                break;
 
-                default:
-                    return rej();
-                    break;
-            }
-        });
+            // In the case of any other error, just see if there's a dir
+            // there already.  If so, then hooray!  If not, then something
+            // is borked.
+            default:
+                opts.fs.stat(p, function (er2, stat) {
+                    // if the stat fails, then that's super weird.
+                    // let the original error be the failure reason.
+                    if (er2 || !stat.isDirectory()) cb(err, made_)
+                    else cb(null, made_);
+                });
+                break;
+        }
     });
 }
