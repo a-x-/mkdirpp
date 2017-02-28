@@ -45,3 +45,7 @@ You can optionally pass in an alternate `fs` implementation by passing in
 # license
 
 MIT
+
+# credits
+
+Based on https://github.com/substack/node-mkdirp
