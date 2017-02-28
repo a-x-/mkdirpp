@@ -48,4 +48,8 @@ MIT
 
 # credits
 
-Based on https://github.com/substack/node-mkdirp
+Based on [mkdirp](https://github.com/substack/node-mkdirp).
+
+# alternatives
+
+[mkdirp-promise](https://www.npmjs.com/package/mkdirp-promise) is an extremely thin wrapper around [mkdirp](https://github.com/substack/node-mkdirp) that uses promises.
